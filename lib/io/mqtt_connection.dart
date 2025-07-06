@@ -1,4 +1,3 @@
-
 import 'package:flutter/foundation.dart';
 import 'package:mqtt5_client/mqtt5_client.dart';
 import 'package:open_mower_app/controllers/sensors_controller.dart';
@@ -16,9 +15,7 @@ import 'dart:ui';
 import 'package:bson/bson.dart';
 import 'package:typed_data/typed_data.dart';
 
-class MqttConnection  {
-
-
+class MqttConnection {
   static final MqttConnection _instance = MqttConnection._internal();
   int clientId = 0;
   // singleton constructor
@@ -41,7 +38,6 @@ class MqttConnection  {
 
   final client = mqttclient.get();
 
-
   void disconnect() {
     client.autoReconnect = false;
     client.onDisconnected = null;
@@ -58,17 +54,19 @@ class MqttConnection  {
   }
 
   void sendJoystick(double x, double r, bool highQos) {
-    final map = {"vx": x,
-    "vz": r};
+    final map = {"vx": x, "vz": r};
     final binary = BsonCodec.serialize(map);
     final buffer = Uint8Buffer();
     buffer.addAll(binary.byteList);
     try {
-      client.publishMessage("teleop", highQos ? MqttQos.atLeastOnce : MqttQos.atMostOnce, buffer);
-    } catch(e) {
+      client.publishMessage(
+        "teleop",
+        highQos ? MqttQos.atLeastOnce : MqttQos.atMostOnce,
+        buffer,
+      );
+    } catch (e) {
       debugPrint("error publishing to mqtt");
     }
-
   }
 
   MapAreaModel convertAreaToPath(area) {
@@ -104,35 +102,36 @@ class MqttConnection  {
       }
     }
 
-
     return MapAreaModel(areaPoly, obstaclePolys);
   }
 
   void parseMap(obj) {
     final mapModel = MapModel();
 
-    mapModel.width =   obj["d"]["meta"]["mapWidth"] ?? 0;
-    mapModel.height =  obj["d"]["meta"]["mapHeight"] ?? 0;
+    mapModel.width = obj["d"]["meta"]["mapWidth"] ?? 0;
+    mapModel.height = obj["d"]["meta"]["mapHeight"] ?? 0;
     mapModel.centerX = obj["d"]["meta"]["mapCenterX"] ?? 0;
     mapModel.centerY = -obj["d"]["meta"]["mapCenterY"] ?? 0;
-    mapModel.dockX =       obj["d"]["docking_pose"]["x"] ?? 0;
-    mapModel.dockY =       -obj["d"]["docking_pose"]["y"] ?? 0;
+    mapModel.dockX = obj["d"]["docking_pose"]["x"] ?? 0;
+    mapModel.dockY = -obj["d"]["docking_pose"]["y"] ?? 0;
     mapModel.dockHeading = obj["d"]["docking_pose"]["heading"] ?? 0;
 
     final wa = obj["d"]["working_areas"];
-    if(wa != null) {
-      for(final area in wa) {
+    if (wa != null) {
+      for (final area in wa) {
         mapModel.mowingAreas.add(convertAreaToPath(area));
       }
     }
     final na = obj["d"]["navigation_areas"];
-    if(na != null) {
-      for(final area in na) {
+    if (na != null) {
+      for (final area in na) {
         mapModel.navigationAreas.add(convertAreaToPath(area));
       }
     }
 
-    debugPrint("Got a map with ${mapModel.mowingAreas.length} mowing areas and ${mapModel.navigationAreas.length} navigation areas. Size: ${mapModel.width} x ${mapModel.height}. Docking pos: ${mapModel.dockX}, ${mapModel.dockY}");
+    debugPrint(
+      "Got a map with ${mapModel.mowingAreas.length} mowing areas and ${mapModel.navigationAreas.length} navigation areas. Size: ${mapModel.width} x ${mapModel.height}. Docking pos: ${mapModel.dockX}, ${mapModel.dockY}",
+    );
 
     final RobotStateController robotStateController = Get.find();
     robotStateController.map.value = mapModel;
@@ -142,8 +141,8 @@ class MqttConnection  {
   void parseMapOverlay(obj) {
     final overlayModel = MapOverlayModel();
     final polys = obj["d"]["polygons"];
-    if(polys != null) {
-      for(final poly in polys) {
+    if (polys != null) {
+      for (final poly in polys) {
         bool first = true;
         Path path = Path();
         for (final pt in poly["poly"]) {
@@ -154,40 +153,44 @@ class MqttConnection  {
             path.lineTo(pt["x"], -pt["y"]);
           }
         }
-        if(path.isBlank != true && poly["is_closed"] > 0) {
+        if (path.isBlank != true && poly["is_closed"] > 0) {
           path.close();
         }
-        overlayModel.polygons.add(OverlayPolygon(path, poly["is_closed"] > 0, poly["line_width"], poly["color"]));
+        overlayModel.polygons.add(
+          OverlayPolygon(
+            path,
+            poly["is_closed"] > 0,
+            poly["line_width"],
+            poly["color"],
+          ),
+        );
       }
     }
-
 
     robotStateController.mapOverlay.value = overlayModel;
     robotStateController.mapOverlay.refresh();
   }
 
   void parseRobotState(obj) {
-    RobotState state        = RobotState();
-    state.isConnected       = true;
-    state.posX              = obj["d"]["pose"]["x"];
-    state.posY              = -obj["d"]["pose"]["y"];
-    state.heading           = obj["d"]["pose"]["heading"];
-    state.posAccuracy       = obj["d"]["pose"]["pos_accuracy"];
-    state.headingAccuracy   = obj["d"]["pose"]["heading_accuracy"];
-    state.headingValid      = obj["d"]["pose"]["heading_valid"] > 0;
-    state.isEmergency       = obj["d"]["emergency"] > 0;
-    state.isCharging        = obj["d"]["is_charging"] > 0;
-    state.rainDetected      = obj["d"]["rain_detected"] > 0;
-    state.currentState      = obj["d"]["current_state"];
-    state.gpsPercent        = obj["d"]["gps_percentage"];
-    state.batteryPercent    = obj["d"]["battery_percentage"];
-    state.currentArea       = obj["d"]["current_area"];
-    state.currentPath       = obj["d"]["current_path"];
-    state.currentPathIndex  = obj["d"]["current_path_index"];
+    RobotState state = RobotState();
+    state.isConnected = true;
+    state.posX = obj["d"]["pose"]["x"];
+    state.posY = -obj["d"]["pose"]["y"];
+    state.heading = obj["d"]["pose"]["heading"];
+    state.posAccuracy = obj["d"]["pose"]["pos_accuracy"];
+    state.headingAccuracy = obj["d"]["pose"]["heading_accuracy"];
+    state.headingValid = obj["d"]["pose"]["heading_valid"] > 0;
+    state.isEmergency = obj["d"]["emergency"] > 0;
+    state.isCharging = obj["d"]["is_charging"] > 0;
+    state.rainDetected = obj["d"]["rain_detected"] > 0;
+    state.currentState = obj["d"]["current_state"];
+    state.gpsPercent = obj["d"]["gps_percentage"];
+    state.batteryPercent = obj["d"]["battery_percentage"];
+    state.currentArea = obj["d"]["current_area"];
+    state.currentPath = obj["d"]["current_path"];
+    state.currentPathIndex = obj["d"]["current_path_index"];
     robotStateController.robotState.value = state;
   }
-
-
 
   void parseSensorInfos(obj) {
     debugPrint("Got new sensor infos, refreshing");
@@ -197,15 +200,16 @@ class MqttConnection  {
           {
             // Got a double sensor
             final sensor = DoubleSensorState(
-                sensorInfo["sensor_name"],
-                sensorInfo["unit"],
-                sensorInfo["min_value"],
-                sensorInfo["max_value"],
-                sensorInfo["has_min_max"] == 1,
-                sensorInfo["lower_critical_value"],
-                sensorInfo["has_critical_low"] == 1,
-                sensorInfo["upper_critical_value"],
-                sensorInfo["has_critical_high"] == 1);
+              sensorInfo["sensor_name"],
+              sensorInfo["unit"],
+              sensorInfo["min_value"],
+              sensorInfo["max_value"],
+              sensorInfo["has_min_max"] == 1,
+              sensorInfo["lower_critical_value"],
+              sensorInfo["has_critical_low"] == 1,
+              sensorInfo["upper_critical_value"],
+              sensorInfo["has_critical_high"] == 1,
+            );
             sensorsController.sensorStates[sensorInfo["sensor_id"]] = sensor;
           }
       }
@@ -215,7 +219,7 @@ class MqttConnection  {
 
   void parseSensorData(sensorId, obj) {
     final sensor = sensorsController.sensorStates[sensorId];
-    if(sensor != null) {
+    if (sensor != null) {
       sensor.value = obj["d"];
     }
     sensorsController.sensorStates.refresh();
@@ -227,16 +231,16 @@ class MqttConnection  {
   }
 
   void parseActionInfos(obj) {
-      final Set<String> newActionSet = {};
-      for(final action in obj["d"]) {
-        if(action["enabled"] > 0) {
-          newActionSet.add(action["action_id"]);
-        }
+    final Set<String> newActionSet = {};
+    for (final action in obj["d"]) {
+      if (action["enabled"] > 0) {
+        newActionSet.add(action["action_id"]);
       }
+    }
 
-      debugPrint("available actions: $newActionSet");
-      // FIXME: invalid_use_of_protected_member
-      robotStateController.availableActions.value = newActionSet;
+    debugPrint("available actions: $newActionSet");
+    // FIXME: invalid_use_of_protected_member
+    robotStateController.availableActions.assignAll(newActionSet);
   }
 
   void onConnected() {
@@ -244,75 +248,83 @@ class MqttConnection  {
     robotStateController.setConnected(true);
 
     client.updates.listen((List<MqttReceivedMessage<MqttMessage>> c) {
-
       for (var msg in c) {
-          // print("got message on ${msg.topic}");
-          final payload = msg.payload as MqttPublishMessage;
-          switch(msg.topic) {
-            case "version": {
+        // print("got message on ${msg.topic}");
+        final payload = msg.payload as MqttPublishMessage;
+        switch (msg.topic) {
+          case "version":
+            {
               final bytes = payload.payload.message?.toList(growable: false);
-              if(bytes == null || bytes.isBlank == true) {
+              if (bytes == null || bytes.isBlank == true) {
                 continue;
               }
               final object = BsonCodec.deserialize(BsonBinary.from(bytes));
               parseVersion(object);
             }
             break;
-            case "actions/bson": {
+          case "actions/bson":
+            {
               final bytes = payload.payload.message?.toList(growable: false);
-              if(bytes == null || bytes.isBlank == true) {
+              if (bytes == null || bytes.isBlank == true) {
                 continue;
               }
               final object = BsonCodec.deserialize(BsonBinary.from(bytes));
               parseActionInfos(object);
             }
             break;
-            case "map/bson": {
+          case "map/bson":
+            {
               final bytes = payload.payload.message?.toList(growable: false);
-              if(bytes == null || bytes.isBlank == true) {
+              if (bytes == null || bytes.isBlank == true) {
                 continue;
               }
               final object = BsonCodec.deserialize(BsonBinary.from(bytes));
               parseMap(object);
             }
             break;
-            case "map_overlay/bson": {
+          case "map_overlay/bson":
+            {
               final bytes = payload.payload.message?.toList(growable: false);
-              if(bytes == null || bytes.isBlank == true) {
+              if (bytes == null || bytes.isBlank == true) {
                 continue;
               }
               final object = BsonCodec.deserialize(BsonBinary.from(bytes));
               parseMapOverlay(object);
             }
             break;
-            case "robot_state/bson": {
+          case "robot_state/bson":
+            {
               // Got the robot state
               final bytes = payload.payload.message?.toList(growable: false);
-              if(bytes == null || bytes.isBlank == true) {
+              if (bytes == null || bytes.isBlank == true) {
                 continue;
               }
               final object = BsonCodec.deserialize(BsonBinary.from(bytes));
               parseRobotState(object);
             }
             break;
-            case "sensor_infos/bson": {
+          case "sensor_infos/bson":
+            {
               // Got the robot state
               final bytes = payload.payload.message?.toList(growable: false);
-              if(bytes == null || bytes.isBlank == true) {
+              if (bytes == null || bytes.isBlank == true) {
                 continue;
               }
               final object = BsonCodec.deserialize(BsonBinary.from(bytes));
               parseSensorInfos(object);
             }
             break;
-            default: {
-              if(msg.topic != null) {
+          default:
+            {
+              if (msg.topic != null) {
                 // It's probably some sensor data, get ID
                 final match = exp.firstMatch(msg.topic!);
                 if (match != null) {
                   // Got sensor data bson
-                  final bytes = payload.payload.message?.toList(growable: false);
-                  if(bytes == null || bytes.isBlank == true) {
+                  final bytes = payload.payload.message?.toList(
+                    growable: false,
+                  );
+                  if (bytes == null || bytes.isBlank == true) {
                     continue;
                   }
                   final object = BsonCodec.deserialize(BsonBinary.from(bytes));
@@ -323,7 +335,7 @@ class MqttConnection  {
               }
             }
             break;
-          }
+        }
       }
     });
 
@@ -343,7 +355,7 @@ class MqttConnection  {
   }
 
   void connect() async {
-    if(_connecting) {
+    if (_connecting) {
       debugPrint("MQTT already connecting, ignoring connect() call");
       return;
     }
@@ -351,35 +363,34 @@ class MqttConnection  {
 
     client.disconnect();
 
-
-    if(kIsWeb && kReleaseMode) {
+    if (kIsWeb && kReleaseMode) {
       // Connect according to settings
-      if(mqttclient.isWebSocket()) {
+      if (mqttclient.isWebSocket()) {
         client.server = "ws://${Uri.base.host}/";
-      } else{
+      } else {
         client.server = Uri.base.host;
       }
       client.port = 9001;
     } else {
       // Connect according to settings
-      if(mqttclient.isWebSocket()) {
+      if (mqttclient.isWebSocket()) {
         client.server = "ws://${settingsController.hostname}/";
-      } else{
+      } else {
         client.server = settingsController.hostname.value;
       }
       client.port = settingsController.mqttPort.value;
     }
 
-
-
     final connMess = MqttConnectMessage()
-    // .withProtocolName("mqtt")
-    // .withProtocolName("websocket")
-    // .startClean()
+        // .withProtocolName("mqtt")
+        // .withProtocolName("websocket")
+        // .startClean()
         .withClientIdentifier("om-client-$clientId");
-      // .authenticateAs(settingsController.mqttUsername, settingsController.mqttPassword);
+    // .authenticateAs(settingsController.mqttUsername, settingsController.mqttPassword);
 
-    debugPrint('Mosquitto client connecting to ${client.server} on ${client.port}....');
+    debugPrint(
+      'Mosquitto client connecting to ${client.server} on ${client.port}....',
+    );
     client.connectionMessage = connMess;
 
     try {
@@ -396,7 +407,8 @@ class MqttConnection  {
   }
 
   void tryConnect() {
-    if(client.connectionStatus?.state == MqttConnectionState.connected || client.connectionStatus?.state == MqttConnectionState.connecting) {
+    if (client.connectionStatus?.state == MqttConnectionState.connected ||
+        client.connectionStatus?.state == MqttConnectionState.connecting) {
       return;
     }
     debugPrint("trying reconnect MQTT");
@@ -408,9 +420,8 @@ class MqttConnection  {
     builder.addString(action);
     try {
       client.publishMessage("action", MqttQos.exactlyOnce, builder.payload!);
-    } catch(e) {
+    } catch (e) {
       debugPrint("error publishing to mqtt");
     }
   }
-
 }
