@@ -18,7 +18,7 @@ class FlexAxisData {
   double upperCriticalValue = 0;
 
   /// Compute some often used axis vars for easier usage
-  compute(DoubleSensorState? sensor, double maxAxisDefault) {
+  void compute(DoubleSensorState? sensor, double maxAxisDefault) {
     minValue = (sensor?.minValue ?? 0);
     maxValue = (sensor?.maxValue ?? 0);
 
