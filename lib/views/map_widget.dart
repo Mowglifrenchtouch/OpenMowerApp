@@ -23,28 +23,38 @@ class MapWidget extends GetView<RobotStateController> {
   @override
   Widget build(BuildContext context) {
     return InteractiveViewer(
-        panEnabled: !centerOnRobot,
-        scaleEnabled: !centerOnRobot,
-        maxScale: 10.0,
-        minScale: 0.1,
-        child: SizedBox(
-            width: double.infinity,
-            height: double.infinity,
-            child: RepaintBoundary(
-                child: Obx(() => CustomPaint(
-                      isComplex: true,
-                      painter: MapPainter(
-                          controller.map.value,
-                          controller.mapOverlay.value,
-                          controller.robotState.value,
-                          centerOnRobot),
-                    )))));
+      panEnabled: !centerOnRobot,
+      scaleEnabled: !centerOnRobot,
+      maxScale: 10.0,
+      minScale: 0.1,
+      child: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: RepaintBoundary(
+          child: Obx(
+            () => CustomPaint(
+              isComplex: true,
+              painter: MapPainter(
+                controller.map.value,
+                controller.mapOverlay.value,
+                controller.robotState.value,
+                centerOnRobot,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
 class MapPainter extends CustomPainter {
-  MapPainter(this.mapModel, this.mapOverlayModel, this.robotState,
-      this.centerOnRobot) {
+  MapPainter(
+    this.mapModel,
+    this.mapOverlayModel,
+    this.robotState,
+    this.centerOnRobot,
+  ) {
     // "robot" arrow
     path_0.reset();
     path_0.moveTo(0.1979167, 0.8750000);
@@ -127,13 +137,17 @@ class MapPainter extends CustomPainter {
     // print("map paint");
     final backgroundRect = Offset.zero & size;
 
-    final drawingRect =
-        Rect.fromLTRB(25, 150, size.width - 25, size.height - 25);
+    final drawingRect = Rect.fromLTRB(
+      25,
+      150,
+      size.width - 25,
+      size.height - 25,
+    );
 
     canvas.drawRect(backgroundRect, _backgroundPaint);
     // backgroundPattern.paintOnRect(canvas, backgroundRect.size, backgroundRect);
 
-/*
+    /*
     canvas.drawRect(
         backgroundRect,
         Paint()
@@ -166,20 +180,20 @@ class MapPainter extends CustomPainter {
     double mapWidth = max(mapModel.width, 15);
     double mapHeight = max(mapModel.height, 15);
 
-
     double mapScale = 80;
 
     if (!centerOnRobot) {
-      mapScale = min(drawingRect.width / mapWidth,
-          drawingRect.height / mapHeight);
+      mapScale = min(
+        drawingRect.width / mapWidth,
+        drawingRect.height / mapHeight,
+      );
     }
 
     canvas.translate(
-        drawingRect.topLeft.dx +
-            (drawingRect.width - mapWidth * mapScale) / 2.0,
-        drawingRect.topLeft.dy +
-            (drawingRect.height - mapHeight * mapScale) / 2.0);
-
+      drawingRect.topLeft.dx + (drawingRect.width - mapWidth * mapScale) / 2.0,
+      drawingRect.topLeft.dy +
+          (drawingRect.height - mapHeight * mapScale) / 2.0,
+    );
 
     canvas.scale(mapScale);
 
@@ -198,29 +212,33 @@ class MapPainter extends CustomPainter {
 
     if (!centerOnRobot) {
       // fit map to the center
-      canvas.translate(mapWidth / 2 - mapModel.centerX,
-          mapHeight / 2 - mapModel.centerY);
+      canvas.translate(
+        mapWidth / 2 - mapModel.centerX,
+        mapHeight / 2 - mapModel.centerY,
+      );
     } else {
       // center on robot
-      canvas.translate(mapWidth / 2 - robotState.posX,
-          mapHeight / 2 - robotState.posY);
+      canvas.translate(
+        mapWidth / 2 - robotState.posX,
+        mapHeight / 2 - robotState.posY,
+      );
       // canvas.rotate((robotState.heading - pi/2) % (2.0*pi));
       // canvas.translate(, );
     }
 
-    final startX = ((-mapWidth / 2 +
+    final startX =
+        ((-mapWidth / 2 +
                     mapModel.centerX -
                     (drawingRect.topLeft.dx +
-                            (drawingRect.width - mapWidth * mapScale) /
-                                2.0) /
+                            (drawingRect.width - mapWidth * mapScale) / 2.0) /
                         mapScale) /
                 5)
             .round() *
         5;
-    final startY = ((-(mapHeight / 2 - mapModel.centerY) -
+    final startY =
+        ((-(mapHeight / 2 - mapModel.centerY) -
                     (drawingRect.topLeft.dy +
-                            (drawingRect.height - mapHeight * mapScale) /
-                                2.0) /
+                            (drawingRect.height - mapHeight * mapScale) / 2.0) /
                         mapScale) /
                 5)
             .round() *
@@ -252,10 +270,13 @@ class MapPainter extends CustomPainter {
 
     canvas.drawPath(grid, _coordinateLinesPaint);
     canvas.drawPath(axes, _coordinateLinesPaintOrigin);
-    canvas.drawCircle(Offset.zero, 0.5,
-        _coordinateLinesPaintOrigin..style = PaintingStyle.fill);
+    canvas.drawCircle(
+      Offset.zero,
+      0.5,
+      _coordinateLinesPaintOrigin..style = PaintingStyle.fill,
+    );
 
-/*
+    /*
     for (final area in mapModel.mowingAreas) {
       canvas.drawShadow(area.outline, Colors.black, 5, false);
     }
@@ -309,11 +330,12 @@ class MapPainter extends CustomPainter {
       canvas.save();
       canvas.translate(mapModel.dockX, mapModel.dockY);
       canvas.drawCircle(
-          Offset.zero,
-          0.3,
-          Paint()
-            ..color = Colors.greenAccent.withOpacity(0.4)
-            ..style = PaintingStyle.fill);
+        Offset.zero,
+        0.3,
+        Paint()
+          ..color = Colors.greenAccent.withValues(alpha: 0.4)
+          ..style = PaintingStyle.fill,
+      );
       // canvas.rotate(-(mapModel.dockHeading - pi / 2) % (2.0 * pi));
       canvas.scale(0.5);
       canvas.translate(-0.5, -0.5);
@@ -331,11 +353,12 @@ class MapPainter extends CustomPainter {
       canvas.translate(robotState.posX, robotState.posY);
       // canvas.drawCircle(Offset.zero, 0.3, Paint()..color = Colors.blueAccent.withOpacity(0.8) ..style = PaintingStyle.fill);
       canvas.drawCircle(
-          Offset.zero,
-          0.3,
-          Paint()
-            ..color = Colors.blueAccent.withOpacity(0.4)
-            ..style = PaintingStyle.fill);
+        Offset.zero,
+        0.3,
+        Paint()
+          ..color = Colors.blueAccent.withValues(alpha: 0.4)
+          ..style = PaintingStyle.fill,
+      );
 
       canvas.rotate(-(robotState.heading - pi / 2) % (2.0 * pi));
       canvas.scale(0.5);

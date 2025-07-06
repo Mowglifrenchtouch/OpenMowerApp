@@ -14,8 +14,8 @@ class RobotStateWidget extends GetView<RobotStateController> {
         : Icon(Icons.link_off, color: Colors.red[200]);
   }
 
-  Icon getGpsIcon(percent) {
-    // TODO: Need gps_enabled flag for a reliable gps_not_fixed/gps_off icon
+  Icon getGpsIcon(double percent) {
+    // Need gps_enabled flag for a reliable gps_not_fixed/gps_off icon
     if (percent > 0.75) {
       return Icon(Icons.gps_fixed, color: Colors.green[200]);
     } else if (percent >= 0.25) {
@@ -27,19 +27,28 @@ class RobotStateWidget extends GetView<RobotStateController> {
   @override
   Widget build(BuildContext context) {
     return Material(
-        elevation: 5,
-        child: Obx(() =>n.Row([
-          EmergencyWidget(emergency: controller.robotState.value.isEmergency),
-          RichText(
-              text: TextSpan(
-                  style: const TextStyle(color: Colors.black87),
-                  children: [
-                const TextSpan(text: "MQTT: "),
-                WidgetSpan(
-                    child: getMqttIcon(controller.robotState.value.isConnected),
-                    alignment: PlaceholderAlignment.middle),
-              ])),
-          /*RichText(
+      elevation: 5,
+      child: Obx(
+        () =>
+            n.Row([
+                EmergencyWidget(
+                  emergency: controller.robotState.value.isEmergency,
+                ),
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(color: Colors.black87),
+                    children: [
+                      const TextSpan(text: "MQTT: "),
+                      WidgetSpan(
+                        child: getMqttIcon(
+                          controller.robotState.value.isConnected,
+                        ),
+                        alignment: PlaceholderAlignment.middle,
+                      ),
+                    ],
+                  ),
+                ),
+                /*RichText(
               text: const TextSpan(
                   style: TextStyle(color: Colors.black87),
                   children: [
@@ -49,28 +58,43 @@ class RobotStateWidget extends GetView<RobotStateController> {
                         Icon(Icons.network_wifi_3_bar, color: Colors.black54),
                     alignment: PlaceholderAlignment.middle),
               ])),*/
-          RichText(
-              text: TextSpan(
-                  style: const TextStyle(color: Colors.black87),
-                  children: [
-                const TextSpan(text: "GPS: "),
-                WidgetSpan(
-                    child: Obx(() => getGpsIcon(controller.robotState.value.gpsPercent)),
-                    alignment: PlaceholderAlignment.middle),
-              ])),
-          RichText(
-              text: TextSpan(
-                  style: const TextStyle(color: Colors.black87),
-                  children: [
-                const TextSpan(text: "Battery: "),
-                WidgetSpan(
-                    child: getBatteryIcon(controller.robotState.value.batteryPercent, controller.robotState.value.isCharging),
-                    alignment: PlaceholderAlignment.middle),
-              ]))
-        ])
-          ..mainAxisAlignment = MainAxisAlignment.end
-          ..m = 16
-          ..gap = 8));
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(color: Colors.black87),
+                    children: [
+                      const TextSpan(text: "GPS: "),
+                      WidgetSpan(
+                        child: Obx(
+                          () => getGpsIcon(
+                            controller.robotState.value.gpsPercent,
+                          ),
+                        ),
+                        alignment: PlaceholderAlignment.middle,
+                      ),
+                    ],
+                  ),
+                ),
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(color: Colors.black87),
+                    children: [
+                      const TextSpan(text: "Battery: "),
+                      WidgetSpan(
+                        child: getBatteryIcon(
+                          controller.robotState.value.batteryPercent,
+                          controller.robotState.value.isCharging,
+                        ),
+                        alignment: PlaceholderAlignment.middle,
+                      ),
+                    ],
+                  ),
+                ),
+              ])
+              ..mainAxisAlignment = MainAxisAlignment.end
+              ..m = 16
+              ..gap = 8,
+      ),
+    );
   }
 
   /* Place this ugly function last.
@@ -101,7 +125,7 @@ class RobotStateWidget extends GetView<RobotStateController> {
         return Icon(MdiIcons.batteryCharging10, color: Colors.red[200]);
       }
     } else {
-      if (percent > 0.9) { 
+      if (percent > 0.9) {
         return const Icon(MdiIcons.battery, color: Colors.black54);
       } else if (percent > 0.8) {
         return const Icon(MdiIcons.battery90, color: Colors.black54);

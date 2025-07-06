@@ -69,7 +69,7 @@ class MqttConnection {
     }
   }
 
-  MapAreaModel convertAreaToPath(area) {
+  MapAreaModel convertAreaToPath(Map<String, dynamic> area) {
     Path areaPoly = Path();
     {
       bool first = true;
@@ -105,7 +105,7 @@ class MqttConnection {
     return MapAreaModel(areaPoly, obstaclePolys);
   }
 
-  void parseMap(obj) {
+  void parseMap(Map<String, dynamic> obj) {
     final mapModel = MapModel();
 
     mapModel.width = obj["d"]["meta"]["mapWidth"] ?? 0;
@@ -138,7 +138,7 @@ class MqttConnection {
     robotStateController.map.refresh();
   }
 
-  void parseMapOverlay(obj) {
+  void parseMapOverlay(Map<String, dynamic> obj) {
     final overlayModel = MapOverlayModel();
     final polys = obj["d"]["polygons"];
     if (polys != null) {
@@ -171,7 +171,7 @@ class MqttConnection {
     robotStateController.mapOverlay.refresh();
   }
 
-  void parseRobotState(obj) {
+  void parseRobotState(Map<String, dynamic> obj) {
     RobotState state = RobotState();
     state.isConnected = true;
     state.posX = obj["d"]["pose"]["x"];
@@ -192,7 +192,7 @@ class MqttConnection {
     robotStateController.robotState.value = state;
   }
 
-  void parseSensorInfos(obj) {
+  void parseSensorInfos(Map<String, dynamic> obj) {
     debugPrint("Got new sensor infos, refreshing");
     for (final sensorInfo in obj["d"]) {
       switch (sensorInfo["value_type"]) {
@@ -217,7 +217,7 @@ class MqttConnection {
     sensorsController.sensorStates.refresh();
   }
 
-  void parseSensorData(sensorId, obj) {
+  void parseSensorData(String sensorId, Map<String, dynamic> obj) {
     final sensor = sensorsController.sensorStates[sensorId];
     if (sensor != null) {
       sensor.value = obj["d"];
@@ -225,12 +225,12 @@ class MqttConnection {
     sensorsController.sensorStates.refresh();
   }
 
-  void parseVersion(obj) {
+  void parseVersion(Map<String, dynamic> obj) {
     final String versionString = obj["version"];
     robotStateController.softwareVersion.value = versionString;
   }
 
-  void parseActionInfos(obj) {
+  void parseActionInfos(Map<String, dynamic> obj) {
     final Set<String> newActionSet = {};
     for (final action in obj["d"]) {
       if (action["enabled"] > 0) {
@@ -239,7 +239,7 @@ class MqttConnection {
     }
 
     debugPrint("available actions: $newActionSet");
-    // FIXME: invalid_use_of_protected_member
+    // assignAll used on RxSet
     robotStateController.availableActions.assignAll(newActionSet);
   }
 
@@ -328,7 +328,10 @@ class MqttConnection {
                     continue;
                   }
                   final object = BsonCodec.deserialize(BsonBinary.from(bytes));
-                  parseSensorData(match[1], object);
+                  final sensorId = match[1];
+                  if (sensorId != null) {
+                    parseSensorData(sensorId, object);
+                  }
                 } else {
                   debugPrint("got unknown message on topic: ${msg.topic}");
                 }
