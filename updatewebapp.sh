@@ -22,23 +22,31 @@ case "$ARCH" in
     ;;
 esac
 
-echo "🧠 Détecté : $ARCH → plateforme Docker : $PLATFORM"
+echo " Détecté : $ARCH → plateforme Docker : $PLATFORM"
 
 # 2. Création conteneur temporaire avec la bonne plateforme
-echo "📦 Création du conteneur temporaire avec $PLATFORM..."
+echo " Création du conteneur temporaire avec $PLATFORM..."
 docker create --platform $PLATFORM --name temp-web $IMAGE
 
-# 3. Copie des fichiers web
-echo "📁 Extraction des fichiers du conteneur..."
+# 3. Copie des fichiers web depuis l'image
+echo " Extraction des fichiers du conteneur temporaire..."
 docker cp temp-web:/usr/share/nginx/html $TMP_BUILD_DIR
 
-# 4. Injection dans le conteneur ROS
-echo "📤 Injection dans le conteneur $TARGET_CONTAINER..."
+# 4. Nettoyage préalable dans le conteneur cible
+echo " Suppression de l'ancien contenu dans $TARGET_PATH du conteneur $TARGET_CONTAINER..."
+docker exec $TARGET_CONTAINER bash -c "mkdir -p $TARGET_PATH && rm -rf $TARGET_PATH/*"
+
+# 5. Injection des nouveaux fichiers
+echo " Copie dans $TARGET_CONTAINER:$TARGET_PATH..."
 docker cp $TMP_BUILD_DIR/. $TARGET_CONTAINER:$TARGET_PATH
 
-# 5. Nettoyage
-echo "🧹 Nettoyage..."
+# 6. Nettoyage
+echo "🧹 Nettoyage temporaire..."
 docker rm temp-web > /dev/null
 rm -rf $TMP_BUILD_DIR
 
-echo "✅ Webapp mise à jour avec succès dans $TARGET_CONTAINER"
+# 7. Redémarrage du conteneur
+echo "🔄 Redémarrage du conteneur $TARGET_CONTAINER..."
+docker restart $TARGET_CONTAINER
+
+echo "✅ Webapp mise à jour et conteneur redémarré avec succès 🎉"
