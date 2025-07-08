@@ -20,17 +20,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Flutter 3.22.1 (Dart 3.8.x)
+      - name: Set up Flutter 3.22.1 (Dart 3.8.1)
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.1'
           channel: stable
           cache: false
 
-      - name: Check Flutter & Dart versions
+      - name: Check Flutter & Dart versions (fail if incorrect)
         run: |
           flutter --version
           dart --version
+          DART_VERSION=$(dart --version 2>&1 | grep -oP '\d+\.\d+\.\d+')
+          echo "Dart version detected: $DART_VERSION"
+          if [[ "$DART_VERSION" != "3.8.1" ]]; then
+            echo "❌ Dart 3.8.1 is required but found $DART_VERSION"
+            exit 1
+          fi
 
       - name: Restore Flutter cache
         uses: actions/cache@v4
@@ -39,9 +45,9 @@ jobs:
             ~/.pub-cache
             .dart_tool
             build
-          key: flutter-cache-${{ hashFiles('pubspec.lock') }}
+          key: flutter-cache-dart3.8-${{ hashFiles('pubspec.lock') }}
           restore-keys: |
-            flutter-cache-
+            flutter-cache-dart3.8-
 
       - name: Install Flutter dependencies
         run: flutter pub get
@@ -68,13 +74,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Restore Docker buildx cache
+      - name: Restore Docker buildx cache (Dart 3.8 specific)
         uses: actions/cache@v4
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          path: /tmp/.buildx-cache-dart3.8
+          key: buildx-dart3.8-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-buildx-
+            buildx-dart3.8-
 
       - name: Build and push Docker image (multi-arch)
         uses: docker/build-push-action@v5
@@ -87,10 +93,15 @@ jobs:
             ghcr.io/mowglifrenchtouch/openmowerapp:lib-updatefull
             ghcr.io/mowglifrenchtouch/openmowerapp:latest
             ghcr.io/mowglifrenchtouch/openmowerapp:${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
+          cache-from: type=local,src=/tmp/.buildx-cache-dart3.8
+          cache-to: type=local,dest=/tmp/.buildx-cache-dart3.8-new
 
       - name: Move Docker buildx cache
         run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          rm -rf /tmp/.buildx-cache-dart3.8
+          mv /tmp/.buildx-cache-dart3.8-new /tmp/.buildx-cache-dart3.8
+
+      - name: Verify Dart SDK version in final Docker image
+        run: |
+          echo "🔎 Vérification de Dart SDK dans l'image Docker finale..."
+          docker run --rm ghcr.io/mowglifrenchtouch/openmowerapp:latest dart --version
