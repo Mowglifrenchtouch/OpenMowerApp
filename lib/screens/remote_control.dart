@@ -22,8 +22,9 @@ class RemoteControl extends GetView<RemoteController> {
           // ..enable = robotState
           //     .hasAction("mower_logic:area_recording/finish_mowing_area")
           ..onPressed = () {
-            controller
-                .callAction("mower_logic:area_recording/finish_mowing_area");
+            controller.callAction(
+              "mower_logic:area_recording/finish_mowing_area",
+            );
             Get.back();
           }
           ..bold
@@ -33,7 +34,8 @@ class RemoteControl extends GetView<RemoteController> {
           //     .hasAction("mower_logic:area_recording/finish_navigation_area")
           ..onPressed = () {
             controller.callAction(
-                "mower_logic:area_recording/finish_navigation_area");
+              "mower_logic:area_recording/finish_navigation_area",
+            );
             Get.back();
           }
           ..bold
@@ -45,7 +47,7 @@ class RemoteControl extends GetView<RemoteController> {
           }
           ..bold
           ..color = Colors.red
-          ..p = 24
+          ..p = 24,
       ];
   }
 
@@ -56,22 +58,76 @@ class RemoteControl extends GetView<RemoteController> {
         const MapWidget(centerOnRobot: true),
         n.Column([
           Expanded(
-              child: Align(
-            alignment: const Alignment(0, 0.8),
-            child: Joystick(
-              mode: JoystickMode.all,
-              onStickDragEnd: () {
-                controller.sendMessage(0, 0);
-              },
-              listener: (details) {
-                controller.joystickCommand.value =
-                    JoystickCommand(-details.y * 1.0, -details.x * 1.6);
-              },
+            child: Align(
+              alignment: const Alignment(0, 0.8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // 🎮 Left Joystick - vellocity forward / Backward
+                  Joystick(
+                    mode: JoystickMode.all,
+                    listener: (details) {
+                      controller.joystickCommand.update((cmd) {
+                        if (cmd != null) {
+                          controller.joystickCommand.value = JoystickCommand(
+                            -details.x, // lx
+                            -details.y, // ly
+                            cmd.rx,
+                            cmd.ry,
+                          );
+                        }
+                      });
+                    },
+                    onStickDragEnd: () {
+                      controller.joystickCommand.update((cmd) {
+                        if (cmd != null) {
+                          controller.joystickCommand.value = JoystickCommand(
+                            0,
+                            0,
+                            cmd.rx,
+                            cmd.ry,
+                          );
+                        }
+                      });
+                    },
+                  ),
+
+                  // 🎮 Right Joystick - twist
+                  Joystick(
+                    mode: JoystickMode.all,
+                    listener: (details) {
+                      controller.joystickCommand.update((cmd) {
+                        if (cmd != null) {
+                          controller.joystickCommand.value = JoystickCommand(
+                            cmd.lx,
+                            cmd.ly,
+                            -details.x,
+                            -details.y,
+                          );
+                        }
+                      });
+                    },
+                    onStickDragEnd: () {
+                      controller.joystickCommand.update((cmd) {
+                        if (cmd != null) {
+                          controller.joystickCommand.value = JoystickCommand(
+                            cmd.lx,
+                            cmd.ly,
+                            0,
+                            0,
+                          );
+                        }
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
-          )),
+          ),
           Material(
-              elevation: 5,
-              child: Obx(() => n.Column([
+            elevation: 5,
+            child: Obx(
+              () => n.Column([
                 /*Padding(padding: const EdgeInsets.all(32), child:
                 Joystick(
                   mode: JoystickMode.all,
@@ -83,75 +139,101 @@ class RemoteControl extends GetView<RemoteController> {
                         JoystickCommand(-details.y * 1.0, -details.x * 1.6);
                   },
                 )),*/
-                    n.Row([
-                      !robotState.hasAction(
-                              "mower_logic:area_recording/stop_recording")
-                          ? (n.Button.elevatedIcon("Start Recording".n,
-                              n.Icon(Icons.fiber_manual_record))
+                n.Row([
+                    !robotState.hasAction(
+                          "mower_logic:area_recording/stop_recording",
+                        )
+                        ? (n.Button.elevatedIcon(
+                              "Start Recording".n,
+                              n.Icon(Icons.fiber_manual_record),
+                            )
                             ..enable = robotState.hasAction(
-                                "mower_logic:area_recording/start_recording")
+                              "mower_logic:area_recording/start_recording",
+                            )
                             ..onPressed = () {
                               controller.callAction(
-                                  "mower_logic:area_recording/start_recording");
+                                "mower_logic:area_recording/start_recording",
+                              );
                             }
                             ..expanded
                             ..elevation = 2
                             ..p = 16)
-                          : (n.Button.elevatedIcon("Stop Recording".n,
-                              n.Icon(Icons.fiber_manual_record))
+                        : (n.Button.elevatedIcon(
+                              "Stop Recording".n,
+                              n.Icon(Icons.fiber_manual_record),
+                            )
                             ..visible = robotState.hasAction(
-                                "mower_logic:area_recording/stop_recording")
+                              "mower_logic:area_recording/stop_recording",
+                            )
                             ..onPressed = () {
                               controller.callAction(
-                                  "mower_logic:area_recording/stop_recording");
+                                "mower_logic:area_recording/stop_recording",
+                              );
                             }
                             ..style = n.ButtonStyle(backgroundColor: Colors.red)
                             ..expanded
                             ..elevation = 2
                             ..p = 16),
-                      n.Button.elevatedIcon("Finish Area".n, n.Icon(Icons.stop),
-                          onPressed: () {
-                        n.showDialog(
+                    n.Button.elevatedIcon(
+                        "Finish Area".n,
+                        n.Icon(Icons.stop),
+                        onPressed: () {
+                          n.showDialog(
                             barrierDismissible: false,
                             context: context,
-                            builder: (context) => buildSaveAreaDialog());
-                      })
-                        ..enable = robotState
-                            .hasAnyAction(["mower_logic:area_recording/finish_navigation_area","mower_logic:area_recording/finish_mowing_area","mower_logic:area_recording/finish_discard"])
-                        ..elevation = 2
-                        ..p = 16,
-                    ])
-                      ..gap = 8
-                      ..px = 16
-                      ..py = 8,
-                    n.Row([
-                      n.Button.elevatedIcon(
-                          "Record Docking".n, n.Icon(Icons.home))
-                        ..enable = robotState
-                            .hasAction("mower_logic:area_recording/record_dock")
-                        ..onPressed = () {
-                          controller.callAction(
-                              "mower_logic:area_recording/record_dock");
-                        }
-                        ..elevation = 2
-                        ..expanded
-                        ..p = 16,
-                      n.Button.elevatedIcon(
-                          "Exit Recording Mode".n, n.Icon(Icons.exit_to_app))
-                        ..enable = robotState.hasAction(
-                            "mower_logic:area_recording/exit_recording_mode")
-                        ..onPressed = () {
-                          controller.callAction(
-                              "mower_logic:area_recording/exit_recording_mode");
-                        }
-                        ..elevation = 2
-                        ..expanded
-                        ..p = 16,
-                    ])
-                      ..gap = 8
-                      ..px = 16
-                      ..py = 8,
-                  ])..py=8)),
+                            builder: (context) => buildSaveAreaDialog(),
+                          );
+                        },
+                      )
+                      ..enable = robotState.hasAnyAction([
+                        "mower_logic:area_recording/finish_navigation_area",
+                        "mower_logic:area_recording/finish_mowing_area",
+                        "mower_logic:area_recording/finish_discard",
+                      ])
+                      ..elevation = 2
+                      ..p = 16,
+                  ])
+                  ..gap = 8
+                  ..px = 16
+                  ..py = 8,
+                n.Row([
+                    n.Button.elevatedIcon(
+                        "Record Docking".n,
+                        n.Icon(Icons.home),
+                      )
+                      ..enable = robotState.hasAction(
+                        "mower_logic:area_recording/record_dock",
+                      )
+                      ..onPressed = () {
+                        controller.callAction(
+                          "mower_logic:area_recording/record_dock",
+                        );
+                      }
+                      ..elevation = 2
+                      ..expanded
+                      ..p = 16,
+                    n.Button.elevatedIcon(
+                        "Exit Recording Mode".n,
+                        n.Icon(Icons.exit_to_app),
+                      )
+                      ..enable = robotState.hasAction(
+                        "mower_logic:area_recording/exit_recording_mode",
+                      )
+                      ..onPressed = () {
+                        controller.callAction(
+                          "mower_logic:area_recording/exit_recording_mode",
+                        );
+                      }
+                      ..elevation = 2
+                      ..expanded
+                      ..p = 16,
+                  ])
+                  ..gap = 8
+                  ..px = 16
+                  ..py = 8,
+              ])..py = 8,
+            ),
+          ),
         ]),
         const RobotStateWidget(),
       ],

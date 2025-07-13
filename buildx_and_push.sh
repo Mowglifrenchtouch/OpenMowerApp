@@ -21,7 +21,7 @@ docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --file "$DOCKERFILE" \
   --tag "$IMAGE_NAME:$TAG" \
-  --tag "$IMAGE_NAME:latest" \
+  --tag "$IMAGE_NAME:dualstick" \
   --push \
   --cache-from type=local,src=$BUILDX_CACHE \
   --cache-to type=local,dest=$BUILDX_CACHE \
